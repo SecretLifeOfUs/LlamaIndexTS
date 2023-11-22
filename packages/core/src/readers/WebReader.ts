@@ -1,0 +1,98 @@
+import axios from "axios";
+import { Document } from "../Node";
+import { BaseReader } from "./base";
+
+/**
+ * Extract the significant text from an arbitrary HTML document.
+ * The contents of any head, script, style, and xml tags are removed completely.
+ * The URLs for a[href] tags are extracted, along with the inner text of the tag.
+ * All other tags are removed, and the inner text is kept intact.
+ * Html entities (e.g., &amp;) are not decoded.
+ */
+export class WebReader implements BaseReader {
+  /**
+   * Modified loadData to fetch HTML from a URL.
+   * @param url URL of the HTML page to be loaded.
+   * @returns Promise<Document[]> A Promise object, eventually yielding zero or one Document parsed from the HTML content of the specified URL.
+   */
+  async loadData(url: string): Promise<Document[]> {
+    try {
+      const response = await axios.get(url, { responseType: "text" });
+      const htmlContent = response.data;
+      const htmlOptions = this.getOptions();
+      const content = await this.parseContent(htmlContent, htmlOptions);
+      return [new Document({ text: content, id_: url })];
+    } catch (error) {
+      console.error("Error fetching HTML content:", error);
+      throw error; // or handle the error as needed
+    }
+  }
+
+  /**
+   * Public method for this reader.
+   * Required by BaseReader interface.
+   * @param file Path/name of the file to be loaded.
+   * @param fs fs wrapper interface for getting the file content.
+   * @returns Promise<Document[]> A Promise object, eventually yielding zero or one Document parsed from the HTML content of the specified file.
+   */
+
+  /*
+  async loadData(
+    file: string,
+    fs: GenericFileSystem = DEFAULT_FS,
+  ): Promise<Document[]> {
+    const dataBuffer = await fs.readFile(file, "utf-8");
+    const htmlOptions = this.getOptions();
+    const content = await this.parseContent(dataBuffer, htmlOptions);
+    return [new Document({ text: content, id_: file })];
+  }
+
+  */
+
+  /**
+   * Wrapper for string-strip-html usage.
+   * @param html Raw HTML content to be parsed.
+   * @param options An object of options for the underlying library
+   * @see getOptions
+   * @returns The HTML content, stripped of unwanted tags and attributes
+   */
+  async parseContent(html: string, options: any = {}): Promise<string> {
+    const { stripHtml } = await import("string-strip-html"); // ESM only
+    return stripHtml(html).result;
+  }
+
+  /**
+   * Wrapper for our configuration options passed to string-strip-html library
+   * @see https://codsen.com/os/string-strip-html/examples
+   * @returns An object of options for the underlying library
+   */
+  getOptions() {
+    return {
+      skipHtmlDecoding: true,
+      stripTogetherWithTheirContents: [
+        "script", // default
+        "style", // default
+        "xml", // default
+        "head", // <-- custom-added
+      ],
+      // Keep the URLs for embedded links
+      // cb: (tag: any, deleteFrom: number, deleteTo: number, insert: string, rangesArr: any, proposedReturn: string) => {
+      //   let temp;
+      //   if (
+      //     tag.name === "a" &&
+      //     tag.attributes &&
+      //     tag.attributes.some((attr: any) => {
+      //       if (attr.name === "href") {
+      //         temp = attr.value;
+      //         return true;
+      //       }
+      //     })
+      //   ) {
+      //     rangesArr.push([deleteFrom, deleteTo, `${temp} ${insert || ""}`]);
+      //   } else {
+      //     rangesArr.push(proposedReturn);
+      //   }
+      // },
+    };
+  }
+}

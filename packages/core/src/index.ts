@@ -27,5 +27,6 @@ export * from "./readers/NotionReader";
 export * from "./readers/PDFReader";
 export * from "./readers/SimpleDirectoryReader";
 export * from "./readers/SimpleMongoReader";
+export * from "./readers/WebReader";
 export * from "./readers/base";
 export * from "./storage";
