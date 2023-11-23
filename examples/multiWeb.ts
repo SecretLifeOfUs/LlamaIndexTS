@@ -3,7 +3,6 @@ import { Document, VectorStoreIndex, WebReader } from "llamaindex";
 class URLsProcessor {
   private documents: Document[] = [];
   private index: VectorStoreIndex | null = null;
-  private isIndexed: boolean = false;
 
   constructor(private urls: string[]) {}
 
@@ -21,7 +20,6 @@ class URLsProcessor {
     }
 
     this.index = await VectorStoreIndex.fromDocuments(this.documents);
-    this.isIndexed = true;
   }
 
   // Method to query the indexed documents
